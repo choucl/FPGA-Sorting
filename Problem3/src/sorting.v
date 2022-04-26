@@ -63,7 +63,7 @@ module sorting(
 
     // counting sort procedure
     always @(posedge clk_i) begin
-        if (rst_i == 1'b1) begin        // synchronous reset
+        if (rst_i == 1'b1) begin                // synchronous reset
             counter       <= 4'd0;
             insert_num    <= 4'd0;
             sorted_nums_o <= 32'd0;
@@ -71,13 +71,17 @@ module sorting(
             valid_o       <= 1'b0;
             cstate        <= IDLE;
         end else if (cstate == IDLE) begin
-            if (start_i == 1'b1)
-                cstate <= COUNT;
-            else
+            if (start_i == 1'b1) begin          // receive start signal
+                counter       <= 4'd0;
+                insert_num    <= 4'd0;
+                sorted_nums_o <= 32'd0;
+                counts        <= 64'd0;
+                valid_o       <= 1'b0;
+                cstate <= COUNT; 
+            end else
                 cstate <= cstate;
         end else if (valid_o == 1'b0) begin
-            // calculate counts
-            if (cstate == COUNT) begin
+            if (cstate == COUNT) begin          // calculate counts
                 case (target_num)
                     4'd0:   counts[`ZERO]     <= counts[`ZERO]     + 4'd1;
                     4'd1:   counts[`ONE]      <= counts[`ONE]      + 4'd1;
@@ -140,9 +144,10 @@ module sorting(
                     endcase
                     counter <= counter + 4'd1;
                 end else begin // if the current count = 0, no insertion is needed
-                    if (insert_num == 4'd15)
+                    if (insert_num == 4'd15) begin
                         valid_o <= 1'b1;
-                    else begin
+                        cstate  <= IDLE;
+                    end else begin
                         insert_num <= insert_num + 4'd1;
                     end
                 end
