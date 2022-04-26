@@ -15,7 +15,7 @@ module arithmetic(
             `ADD: result_o = a_i + b_i;
             `SUB: result_o = a_i - b_i;
             `MUL: begin
-                result = a_i * b_i;
+                result   = a_i * b_i;
                 result_o = result[7:0];
             end
             default: begin
