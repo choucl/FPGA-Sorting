@@ -1,26 +1,28 @@
 `include "def.v"
 
 module sorting(
-    input               clk_i,
-    input               rst_i,
-    input [31:0]        nums_i,         // 8 4-bit numbers
-    output reg          valid_o,        // pull while finishing sorting
-    output reg [31:0]   sorted_nums_o   // 8 4-bit numbers
+    input             clk_i,
+    input             rst_i,
+    input             start_i,       // start signal
+    input [31:0]      nums_i,        // 8 4-bit numbers
+    output reg        valid_o,       // pull while finishing sorting
+    output reg [31:0] sorted_nums_o  // 8 4-bit numbers
 );
 
     // using counting sort
-    reg [3:0]           counter;
-    reg [3:0]           insert_num;
+    reg [3:0]  counter;
+    reg [3:0]  insert_num;
+    reg [63:0] counts;
 
-    reg [63:0]          counts;
+    // state machine
+    reg [1:0 ] cstate;
+    parameter  IDLE  = 2'd0,
+               COUNT = 2'd1,
+               SORT  = 2'd2;
 
-    parameter           COUNT = 1'b0,
-                        SORT  = 1'b1;
-    reg                 cstate;
-
-    reg [3:0]           target_num;
-    reg [3:0]           target_count;
     // Use while COUNT
+    reg [3:0] target_num;
+
     always @(*) begin
         case (counter)
             4'd0: target_num = nums_i[`ZERO];
@@ -36,6 +38,8 @@ module sorting(
     end
 
     // Use while SORT(insert numbers)
+    reg [3:0] target_count;
+
     always @(*) begin
         case (insert_num)
             4'd0:   target_count = counts[`ZERO];
@@ -57,45 +61,50 @@ module sorting(
         endcase
     end
 
-    // counting sorting
+    // counting sort procedure
     always @(posedge clk_i) begin
         if (rst_i == 1'b1) begin        // synchronous reset
-            counter         <= 4'd0;
-            insert_num      <= 4'd0;
-            sorted_nums_o   <= 32'd0;
-            counts          <= 64'd0;
-            valid_o         <= 1'b0;
-            cstate          <= COUNT;
+            counter       <= 4'd0;
+            insert_num    <= 4'd0;
+            sorted_nums_o <= 32'd0;
+            counts        <= 64'd0;
+            valid_o       <= 1'b0;
+            cstate        <= IDLE;
+        end else if (cstate == IDLE) begin
+            if (start_i == 1'b1)
+                cstate <= COUNT;
+            else
+                cstate <= cstate;
         end else if (valid_o == 1'b0) begin
             // calculate counts
             if (cstate == COUNT) begin
                 case (target_num)
-                    4'd0:   counts[`ZERO]       <= counts[`ZERO]        + 4'd1;
-                    4'd1:   counts[`ONE]        <= counts[`ONE]         + 4'd1;
-                    4'd2:   counts[`TWO]        <= counts[`TWO]         + 4'd1;
-                    4'd3:   counts[`THREE]      <= counts[`THREE]       + 4'd1;
-                    4'd4:   counts[`FOUR]       <= counts[`FOUR]        + 4'd1;
-                    4'd5:   counts[`FIVE]       <= counts[`FIVE]        + 4'd1;
-                    4'd6:   counts[`SIX]        <= counts[`SIX]         + 4'd1;
-                    4'd7:   counts[`SEVEN]      <= counts[`SEVEN]       + 4'd1;
-                    4'd8:   counts[`EIGHT]      <= counts[`EIGHT]       + 4'd1;
-                    4'd9:   counts[`NINE]       <= counts[`NINE]        + 4'd1;
-                    4'd10:  counts[`TEN]        <= counts[`TEN]         + 4'd1;
-                    4'd11:  counts[`ELEVEN]     <= counts[`ELEVEN]      + 4'd1;
-                    4'd12:  counts[`TWELVE]     <= counts[`TWELVE]      + 4'd1;
-                    4'd13:  counts[`THIRTEEN]   <= counts[`THIRTEEN]    + 4'd1;
-                    4'd14:  counts[`FOURTEEN]   <= counts[`FOURTEEN]    + 4'd1;
-                    4'd15:  counts[`FIFTEEN]    <= counts[`FIFTEEN]     + 4'd1;
+                    4'd0:   counts[`ZERO]     <= counts[`ZERO]     + 4'd1;
+                    4'd1:   counts[`ONE]      <= counts[`ONE]      + 4'd1;
+                    4'd2:   counts[`TWO]      <= counts[`TWO]      + 4'd1;
+                    4'd3:   counts[`THREE]    <= counts[`THREE]    + 4'd1;
+                    4'd4:   counts[`FOUR]     <= counts[`FOUR]     + 4'd1;
+                    4'd5:   counts[`FIVE]     <= counts[`FIVE]     + 4'd1;
+                    4'd6:   counts[`SIX]      <= counts[`SIX]      + 4'd1;
+                    4'd7:   counts[`SEVEN]    <= counts[`SEVEN]    + 4'd1;
+                    4'd8:   counts[`EIGHT]    <= counts[`EIGHT]    + 4'd1;
+                    4'd9:   counts[`NINE]     <= counts[`NINE]     + 4'd1;
+                    4'd10:  counts[`TEN]      <= counts[`TEN]      + 4'd1;
+                    4'd11:  counts[`ELEVEN]   <= counts[`ELEVEN]   + 4'd1;
+                    4'd12:  counts[`TWELVE]   <= counts[`TWELVE]   + 4'd1;
+                    4'd13:  counts[`THIRTEEN] <= counts[`THIRTEEN] + 4'd1;
+                    4'd14:  counts[`FOURTEEN] <= counts[`FOURTEEN] + 4'd1;
+                    4'd15:  counts[`FIFTEEN]  <= counts[`FIFTEEN]  + 4'd1;
                 endcase
                 if (counter != 4'd7)
                     counter <= counter + 4'd1;
                 else begin
-                    cstate <= SORT;
+                    cstate  <= SORT;
                     counter <= 4'd0;
                 end
             // sorting
             // insert_num is the number that will be inserted
-            end else begin
+            end else if (cstate == SORT) begin
                 // if the current number can be inserted
                 if (target_count != 4'd0) begin
                     // insert number
@@ -112,22 +121,22 @@ module sorting(
                     endcase
                     // reduce count
                     case (insert_num)
-                        4'd0:   counts[`ZERO]       <= counts[`ZERO]        - 4'd1;
-                        4'd1:   counts[`ONE]        <= counts[`ONE]         - 4'd1;
-                        4'd2:   counts[`TWO]        <= counts[`TWO]         - 4'd1;
-                        4'd3:   counts[`THREE]      <= counts[`THREE]       - 4'd1;
-                        4'd4:   counts[`FOUR]       <= counts[`FOUR]        - 4'd1;
-                        4'd5:   counts[`FIVE]       <= counts[`FIVE]        - 4'd1;
-                        4'd6:   counts[`SIX]        <= counts[`SIX]         - 4'd1;
-                        4'd7:   counts[`SEVEN]      <= counts[`SEVEN]       - 4'd1;
-                        4'd8:   counts[`EIGHT]      <= counts[`EIGHT]       - 4'd1;
-                        4'd9:   counts[`NINE]       <= counts[`NINE]        - 4'd1;
-                        4'd10:  counts[`TEN]        <= counts[`TEN]         - 4'd1;
-                        4'd11:  counts[`ELEVEN]     <= counts[`ELEVEN]      - 4'd1;
-                        4'd12:  counts[`TWELVE]     <= counts[`TWELVE]      - 4'd1;
-                        4'd13:  counts[`THIRTEEN]   <= counts[`THIRTEEN]    - 4'd1;
-                        4'd14:  counts[`FOURTEEN]   <= counts[`FOURTEEN]    - 4'd1;
-                        4'd15:  counts[`FIFTEEN]    <= counts[`FIFTEEN]     - 4'd1;
+                        4'd0:   counts[`ZERO]     <= counts[`ZERO]     - 4'd1;
+                        4'd1:   counts[`ONE]      <= counts[`ONE]      - 4'd1;
+                        4'd2:   counts[`TWO]      <= counts[`TWO]      - 4'd1;
+                        4'd3:   counts[`THREE]    <= counts[`THREE]    - 4'd1;
+                        4'd4:   counts[`FOUR]     <= counts[`FOUR]     - 4'd1;
+                        4'd5:   counts[`FIVE]     <= counts[`FIVE]     - 4'd1;
+                        4'd6:   counts[`SIX]      <= counts[`SIX]      - 4'd1;
+                        4'd7:   counts[`SEVEN]    <= counts[`SEVEN]    - 4'd1;
+                        4'd8:   counts[`EIGHT]    <= counts[`EIGHT]    - 4'd1;
+                        4'd9:   counts[`NINE]     <= counts[`NINE]     - 4'd1;
+                        4'd10:  counts[`TEN]      <= counts[`TEN]      - 4'd1;
+                        4'd11:  counts[`ELEVEN]   <= counts[`ELEVEN]   - 4'd1;
+                        4'd12:  counts[`TWELVE]   <= counts[`TWELVE]   - 4'd1;
+                        4'd13:  counts[`THIRTEEN] <= counts[`THIRTEEN] - 4'd1;
+                        4'd14:  counts[`FOURTEEN] <= counts[`FOURTEEN] - 4'd1;
+                        4'd15:  counts[`FIFTEEN]  <= counts[`FIFTEEN]  - 4'd1;
                     endcase
                     counter <= counter + 4'd1;
                 end else begin // if the current count = 0, no insertion is needed
