@@ -24,8 +24,6 @@ module arithmetic(
         
     end
 
-    reg [7:0] temp;
-
     always @(*) begin
         case (operator_i)
             `ADD: begin
