@@ -2,9 +2,9 @@
 
 module parity_generator(
     input [31:0] data_i,
-    output       parity_bit
+    output       parity_bit_o
 );
     // even parity
-    assign parity_bit = ^data_i[31:0];
+    assign parity_bit_o = ^data_i[31:0];
 
 endmodule
