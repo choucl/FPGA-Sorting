@@ -3,7 +3,7 @@
 module sorting(
     input             clk_i,
     input             rst_i,
-    input             start_i,       // start signal
+    input             start_clear_i, // start signal
     input [31:0]      nums_i,        // 8 4-bit numbers
     output reg        valid_o,       // pull while finishing sorting
     output reg [31:0] sorted_nums_o  // 8 4-bit numbers
@@ -18,7 +18,9 @@ module sorting(
     reg [1:0 ] cstate;
     parameter  IDLE  = 2'd0,
                COUNT = 2'd1,
-               SORT  = 2'd2;
+               SORT  = 2'd2,
+               DONE  = 2'd3;
+
 
     // Use while COUNT
     reg [3:0] target_num;
@@ -71,13 +73,18 @@ module sorting(
             valid_o       <= 1'b0;
             cstate        <= IDLE;
         end else if (cstate == IDLE) begin
-            if (start_i == 1'b1) begin          // receive start signal
+            if (start_clear_i == 1'b1) begin          // receive start signal
+                cstate <= COUNT; 
+            end else
+                cstate <= cstate;
+        end else if (cstate == DONE) begin
+            if (start_clear_i == 1'b0) begin          // receive clear signal
                 counter       <= 4'd0;
                 insert_num    <= 4'd0;
                 sorted_nums_o <= 32'd0;
                 counts        <= 64'd0;
                 valid_o       <= 1'b0;
-                cstate <= COUNT; 
+                cstate        <= IDLE;
             end else
                 cstate <= cstate;
         end else if (valid_o == 1'b0) begin
@@ -146,7 +153,7 @@ module sorting(
                 end else begin // if the current count = 0, no insertion is needed
                     if (insert_num == 4'd15) begin
                         valid_o <= 1'b1;
-                        cstate  <= IDLE;
+                        cstate  <= DONE;
                     end else begin
                         insert_num <= insert_num + 4'd1;
                     end
