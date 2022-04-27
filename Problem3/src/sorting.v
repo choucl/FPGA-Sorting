@@ -2,7 +2,7 @@
 
 module sorting(
     input             clk_i,
-    input             rst_i,
+    input             rst_ni,
     input             start_clear_i, // start signal
     input [31:0]      nums_i,        // 8 4-bit numbers
     output reg        valid_o,       // pull while finishing sorting
@@ -65,7 +65,7 @@ module sorting(
 
     // counting sort procedure
     always @(posedge clk_i) begin
-        if (rst_i == 1'b1) begin                // synchronous reset
+        if (rst_ni == 1'b0) begin                     // synchronous reset
             counter       <= 4'd0;
             insert_num    <= 4'd0;
             sorted_nums_o <= 32'd0;
