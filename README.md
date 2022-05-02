@@ -24,7 +24,7 @@ The colors appear in the following order:
 
 ### Detail
 
-Define the **PWM **value of each color in `red_arr`, `green_arr`, and `blue_arr`. Each color has its own state, the double `for` loops are used to control the duration of each state and the corresponding RGB output color. The inner loop controls the output color of RGB LED by PWM value, and the outer loop controls the duration of each state(runs `ROUND` times).
+Define the **PWM** value of each color in `red_arr`, `green_arr`, and `blue_arr`. Each color has its own state, the double `for` loops are used to control the duration of each state and the corresponding RGB output color. The inner loop controls the output color of RGB LED by PWM value, and the outer loop controls the duration of each state(runs `ROUND` times).
 
 ### Block Design
 
